@@ -62,11 +62,24 @@
         const userList = document.getElementById("userList");
 
         joinBtn.addEventListener("click", () => {
+            if (!name.value || !room.value) {
+                alert("Please enter both username and room name.");
+                return;
+            }
+
+            const savedname=localStorage.setItem("name", name.value); // Store username in local storage
+            const savedroom=localStorage.setItem("room", room.value); // Store room name in local storage
+
+            if(savedname && savedroom){
+             name.value=savedname;
+             room.value=savedroom;
+
             joinSection.style.display = "none";
             chatSection.style.display = "block";
 
             socket.emit("join_room", { room: room.value, name: name.value });
             roomTitle.innerText = `Room: ${room.value}`;
+        }
         });
 
                     //comes from io.to(room).emit("room_users", data); 
