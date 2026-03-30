@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHATBOOM</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="app">
+    <div id="joinSection" class="card">
+        <h2>Join Chat</h2>
+        <input id="name" placeholder="Enter your Username" />
+        <input id="room" placeholder="Enter Room Name" />
+        <button id="joinBtn">Join Room</button>
+    </div>
+
+       <div id="chatSection" class="chat hidden">
+  
+        <div class="chat-header">
+        <h3 id="roomTitle"></h3>
+        </div>
+
+    <div class="chat-body">
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <h3>Active Users</h3>
+            <ul id="userList"></ul>
+        </div>
+
+        <!-- MAIN CHAT -->
+        <div class="chat-main">
+            <div id="allmsg" class="messages"></div>
+
+            <div class="input-area">
+                <input id="msgInput" placeholder="Type a message..." />
+                <button id="sendbtn">Send</button>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <!--socket download-->
+    <script>
+        const socket=io();//socket object
+        const sendbtn=document.getElementById("sendbtn");
+        const allmsg=document.getElementById("allmsg");
+        const name= document.getElementById("name");
+        const msg=document.getElementById("msgInput");
+        const room=document.getElementById("room");
+        const joinBtn=document.getElementById("joinBtn");
+
+        const joinSection = document.getElementById("joinSection");
+        const chatSection = document.getElementById("chatSection");
+        const roomTitle = document.getElementById("roomTitle");
+        const userList = document.getElementById("userList");
+
+        joinBtn.addEventListener("click", () => {
+            joinSection.style.display = "none";
+            chatSection.style.display = "block";
+
+            socket.emit("join_room", { room: room.value, name: name.value });
+            roomTitle.innerText = `Room: ${room.value}`;
+        });
+
+                    //comes from io.to(room).emit("room_users", data); 
+        socket.on("room_users", (users) => {
+            //clear old list of users
+            userList.innerHTML = "";
+            users.forEach((user) => {
+              const li = document.createElement("li");
+                li.innerText = user;
+                console.log(user);
+                //list value current name is same as user name then make it bold`
+                if (user === name.value) {
+                 li.style.fontWeight = "bold";
+                 li.style.color = "#FCA311";
+                }
+
+                userList.appendChild(li);
+            });
+        });
+
+        sendbtn.addEventListener("click",()=>{
+                const data={
+                    name:name.value,
+                    msg:msg.value,
+                    room:room.value
+                };
+            socket.emit("message",data);
+            msg.value="";
+        });
+        //previous msgs
+        socket.on("previous_messages", (messages) => {
+            allmsg.innerHTML = "";
+
+            messages.forEach((data) => {
+                const div = document.createElement("div");
+                div.classList.add("msg");
+
+            if (data.name === name.value) {
+                div.classList.add("my");
+            }
+
+            div.innerHTML = `
+            <div class="meta">
+                <span class="name">${data.name}</span>
+                <span class="time">${new Date(data.time).toLocaleTimeString()}</span>
+            </div>
+            <div class="content">
+                ${data.msg}
+            </div>
+            `;
+
+            allmsg.appendChild(div);
+    });
+});
+        //recieve msgs from server
+        socket.on("receive_message",(data)=>{
+                    
+                    const div = document.createElement("div");
+                    div.classList.add("msg");
+                    //checks if current user is me,whose sending msg
+                    if (data.name === name.value) {
+                        div.classList.add("my");
+                        }
+                    div.innerHTML=`
+                    <div class="meta">
+                        <span class="name">${data.name}</span>
+                        <span class="time">${new Date().toLocaleTimeString()}</span>
+                    </div>  
+                    <div class="content">
+                        ${data.msg}
+                    </div>
+                `;
+                allmsg.appendChild(div);
+
+                // auto scroll
+                allmsg.scrollTop = allmsg.scrollHeight;
+            }); 
+
+
+
+
+    </script>
+</body>
+</html>
+            
+        
